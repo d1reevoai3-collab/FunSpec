@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Используем SQLite для локальной разработки (на Railway можно будет заменить на postgresql)
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model HwidRequest {
+  id        Int      @id @default(autoincrement())
+  vkId      String   // ID пользователя в ВК
+  hwid      String   @unique // Уникальный HWID
+  status    String   @default("PENDING") // PENDING, ACTIVE, REJECTED, BANNED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
