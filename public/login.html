@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FunSpec - Авторизация</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23a71d31%22/><path d=%22M30 45v-10a20 20 0 0 1 40 0v10m-30 0h20a5 5 0 0 1 5 5v20a5 5 0 0 1-5 5H30a5 5 0 0 1-5-5V50a5 5 0 0 1 5-5z%22 fill=%22none%22 stroke=%22white%22 stroke-width=%228%22 stroke-linejoin=%22round%22/></svg>">
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      
+      <!-- Glowing Red Lock Icon Container -->
+      <div class="login-logo-container">
+        <!-- SVG Lock Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+
+      <h2 class="login-title">FUNSPEC</h2>
+      <p class="login-subtitle">Войти в панель управления</p>
+
+      <!-- Error Message Box -->
+      <div id="error-box" class="error-message">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span id="error-text">Неверный пароль</span>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form">
+        <!-- Username input to match reference visual structure -->
+        <div class="form-group">
+          <input type="text" id="username" class="form-control" placeholder="Имя пользователя" value="admin" required>
+          <span class="input-icon">
+            <!-- User Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </span>
+        </div>
+
+        <!-- Password input -->
+        <div class="form-group">
+          <input type="password" id="password" class="form-control" placeholder="Пароль" required autofocus>
+          <span class="input-icon">
+            <!-- Key Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m-3.418 4.818l-2.828-2.828m0 0A5 5 0 1113.8 6.2M9.9 10.3a5 5 0 01-3.076 3.076l-1.59 1.59a1 1 0 01-.707.293H3v-2.293a1 1 0 01.293-.707l1.59-1.59A5 5 0 019.9 10.3z" />
+            </svg>
+          </span>
+        </div>
+
+        <button type="submit" class="btn-login" id="btn-submit">
+          <span>Войти</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <span>Нет аккаунта? </span><a href="#" onclick="alert('Регистрация отключена администратором. Используйте пароль из файла конфигурации (.env).'); return false;">Зарегистрироваться</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Handle auth status on load (if already logged in, redirect to index)
+    fetch('/api/auth/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          window.location.href = '/index.html';
+        }
+      });
+
+    // Form submission login request
+    const form = document.getElementById('login-form');
+    const submitBtn = document.getElementById('btn-submit');
+    const errorBox = document.getElementById('error-box');
+    const errorText = document.getElementById('error-text');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      // Update UI state to loading
+      submitBtn.disabled = true;
+      submitBtn.querySelector('span').innerText = 'Загрузка...';
+      errorBox.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          window.location.href = '/index.html';
+        } else {
+          // Display readable error message
+          errorText.innerText = data.error || 'Неверные имя пользователя или пароль';
+          errorBox.style.display = 'flex';
+          
+          // Re-enable form
+          submitBtn.disabled = false;
+          submitBtn.querySelector('span').innerText = 'Войти';
+          document.getElementById('password').value = '';
+          document.getElementById('password').focus();
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        errorText.innerText = 'Ошибка подключения к серверу. Попробуйте позже.';
+        errorBox.style.display = 'flex';
+        submitBtn.disabled = false;
+        submitBtn.querySelector('span').innerText = 'Войти';
+      }
+    });
+  </script>
+</body>
+</html>

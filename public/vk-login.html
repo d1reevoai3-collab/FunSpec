@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FunSpec - Вход</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23a71d31%22/><path d=%22M30 45v-10a20 20 0 0 1 40 0v10m-30 0h20a5 5 0 0 1 5 5v20a5 5 0 0 1-5 5H30a5 5 0 0 1-5-5V50a5 5 0 0 1 5-5z%22 fill=%22none%22 stroke=%22white%22 stroke-width=%228%22 stroke-linejoin=%22round%22/></svg>">
+  
+  <style>
+    body {
+      background: radial-gradient(circle at center, rgba(167, 29, 49, 0.1) 0%, var(--bg-base) 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-container {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 48px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(167, 29, 49, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .login-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+    
+    .logo {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      width: 80px;
+      height: 80px;
+      background-color: rgba(167, 29, 49, 0.1);
+      border: 1px solid rgba(167, 29, 49, 0.25);
+      border-radius: 20px;
+      margin-bottom: 24px;
+      color: var(--accent);
+      box-shadow: 0 0 20px rgba(167, 29, 49, 0.2);
+    }
+    
+    .logo svg {
+      width: 40px;
+      height: 40px;
+    }
+    
+    h1 {
+      margin-bottom: 8px;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    
+    p {
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    
+    .btn-vk {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 16px;
+      background-color: #0077FF;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(0, 119, 255, 0.3);
+    }
+    
+    .btn-vk:hover {
+      background-color: #006ae6;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 119, 255, 0.4);
+    }
+    
+    .btn-vk:active {
+      transform: translateY(0);
+    }
+    
+    .vk-icon {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+    
+    #error-msg {
+      color: var(--danger);
+      margin-top: 20px;
+      font-size: 14px;
+      background-color: rgba(239, 68, 68, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+    </div>
+    <h1>FunSpec</h1>
+    <p>Для доступа к загрузкам и статистике необходимо авторизоваться</p>
+    
+    <a href="/api/auth/vk" class="btn-vk">
+      <svg class="vk-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M15.074 1.34h4.154l-5.698 6.505 6.69 8.815h-5.237l-4.101-5.362-4.686 5.362H2.039l6.155-7.03L1.875 1.34h5.365l3.708 4.908 4.126-4.908z"/>
+      </svg>
+      Войти через ВКонтакте
+    </a>
+
+    <div id="error-msg">Произошла ошибка при входе.</div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error) {
+      const errorDiv = document.getElementById('error-msg');
+      errorDiv.style.display = 'block';
+      if (error === 'no_code') errorDiv.textContent = 'Авторизация отменена пользователем.';
+      else if (error === 'vk_error') errorDiv.textContent = 'Ошибка со стороны ВКонтакте.';
+      else if (error === 'server_error') errorDiv.textContent = 'Ошибка сервера. Убедитесь, что ключи ВК настроены верно.';
+    }
+  </script>
+</body>
+</html>

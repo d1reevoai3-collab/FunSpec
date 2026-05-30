@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FunSpec - Скачать обновления</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23a71d31%22/><path d=%22M30 45v-10a20 20 0 0 1 40 0v10m-30 0h20a5 5 0 0 1 5 5v20a5 5 0 0 1-5 5H30a5 5 0 0 1-5-5V50a5 5 0 0 1 5-5z%22 fill=%22none%22 stroke=%22white%22 stroke-width=%228%22 stroke-linejoin=%22round%22/></svg>">
+  
+  <style>
+    .download-wrapper {
+      min-height: 100vh;
+      background: radial-gradient(circle at center, rgba(167, 29, 49, 0.12) 0%, var(--bg-base) 80%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 24px;
+    }
+    
+    .download-container {
+      width: 100%;
+      max-width: 900px;
+      position: relative;
+    }
+    
+    .download-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    
+    .download-logo {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      width: 64px;
+      height: 64px;
+      background-color: rgba(167, 29, 49, 0.1);
+      border: 1px solid rgba(167, 29, 49, 0.25);
+      border-radius: 16px;
+      margin-bottom: 16px;
+      color: var(--accent);
+      box-shadow: 0 0 20px rgba(167, 29, 49, 0.2);
+    }
+    
+    .download-logo svg {
+      width: 28px;
+      height: 28px;
+    }
+    
+    .download-title {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    
+    .download-subtitle {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+    
+    /* SPA View Screens styling */
+    .view-screen {
+      opacity: 0;
+      transform: translateY(15px);
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .view-screen.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Cards Layout Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+      margin-bottom: 48px;
+    }
+    
+    .download-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 40px 32px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .download-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(167, 29, 49, 0.3);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(167, 29, 49, 0.15);
+    }
+    
+    .download-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+    }
+    
+    .download-card:hover::before {
+      opacity: 1;
+    }
+    
+    .card-icon-wrapper {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--accent);
+      margin-bottom: 24px;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+      transition: all var(--transition-fast);
+    }
+    
+    .download-card:hover .card-icon-wrapper {
+      background-color: rgba(167, 29, 49, 0.05);
+      border-color: rgba(167, 29, 49, 0.2);
+      color: var(--accent-hover);
+      box-shadow: 0 0 15px rgba(167, 29, 49, 0.2);
+      transform: scale(1.05);
+    }
+    
+    .card-icon-wrapper svg {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    
+    .card-description {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      line-height: 1.6;
+      flex-grow: 1;
+    }
+    
+    /* Huge Download Button */
+    .btn-download-large {
+      width: 100%;
+      padding: 16px 24px;
+      background-color: var(--accent);
+      color: var(--text-primary);
+      text-decoration: none;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 15px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      transition: all var(--transition-fast);
+      box-shadow: 0 6px 20px rgba(167, 29, 49, 0.25);
+      border: none;
+      cursor: pointer;
+    }
+    
+    .btn-download-large:hover {
+      background-color: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(167, 29, 49, 0.4);
+    }
+    
+    .btn-download-large:active {
+      transform: translateY(0);
+    }
+    
+    .btn-download-large.disabled {
+      background-color: var(--border-color);
+      color: var(--text-secondary);
+      box-shadow: none;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    .btn-download-large svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .meta-container {
+      margin-top: 16px;
+      min-height: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .file-meta {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+    
+    /* View Switch Trigger links */
+    .link-changelogs-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: 1px solid rgba(167, 29, 49, 0.2);
+      background-color: rgba(167, 29, 49, 0.02);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all var(--transition-normal);
+      margin-top: 12px;
+    }
+
+    .link-changelogs-trigger:hover {
+      color: var(--accent-hover);
+      background-color: rgba(167, 29, 49, 0.08);
+      border-color: rgba(167, 29, 49, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(167, 29, 49, 0.2);
+    }
+
+    .link-changelogs-trigger svg {
+      width: 16px;
+      height: 16px;
+      transition: transform var(--transition-fast);
+    }
+
+    .link-changelogs-trigger:hover svg {
+      transform: translateX(4px);
+    }
+
+    /* Back Trigger Navigation */
+    .changelog-back-row {
+      margin-bottom: 32px;
+      text-align: left;
+    }
+
+    .link-back-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all var(--transition-fast);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+    }
+
+    .link-back-trigger:hover {
+      color: var(--text-primary);
+      background-color: rgba(255, 255, 255, 0.02);
+      border-color: var(--text-secondary);
+    }
+
+    .link-back-trigger svg {
+      width: 16px;
+      height: 16px;
+      transition: transform var(--transition-fast);
+    }
+
+    .link-back-trigger:hover svg {
+      transform: translateX(-3px);
+    }
+
+    /* Changelog elements list */
+    .changelog-header-row {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .changelog-header-row h2 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    
+    .changelog-header-row svg {
+      width: 26px;
+      height: 26px;
+      color: var(--accent);
+    }
+    
+    .changelog-list {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    
+    .changelog-item {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 32px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      text-align: left;
+    }
+    
+    .changelog-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    
+    .changelog-version {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .changelog-date {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      background-color: rgba(167, 29, 49, 0.1);
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(167, 29, 49, 0.15);
+    }
+    
+    .changelog-body {
+      font-size: 14.5px;
+      color: #e5e7eb;
+      line-height: 1.75;
+      white-space: pre-line;
+      margin-bottom: 24px;
+    }
+    
+    .changelog-files {
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .changelog-files-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    
+    .changelog-file-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #5181b8;
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: color var(--transition-fast);
+      width: fit-content;
+    }
+    
+    .changelog-file-link:hover {
+      color: #719ecc;
+      text-decoration: underline;
+    }
+    
+    .changelog-file-link svg {
+      width: 15px;
+      height: 15px;
+    }
+    
+    .file-size {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+    
+    /* Loader Spinner styles */
+    .loader-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+      gap: 16px;
+    }
+    
+    .loader-text {
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    /* Error container */
+    .error-state {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 48px;
+      text-align: center;
+      color: var(--text-secondary);
+      width: 100%;
+    }
+    
+    .error-state svg {
+      width: 48px;
+      height: 48px;
+      color: var(--danger);
+      margin-bottom: 16px;
+    }
+    
+    .error-state h3 {
+      font-size: 18px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    
+    @media (max-width: 768px) {
+      .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .download-card {
+        padding: 32px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="download-wrapper">
+    <div class="download-container">
+      
+      <!-- SPINNER LOADER CONTAINER -->
+      <div id="download-loader" class="loader-container">
+        <div class="spinner"></div>
+        <div class="loader-text">Получение последних обновлений...</div>
+      </div>
+      
+      <!-- VIEW 1: MAIN DOWNLOAD VIEW (Visible by default) -->
+      <section id="view-download" class="view-screen" style="display: none;">
+        <!-- LOGO / HEADER -->
+        <div class="download-header">
+          <div class="download-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </div>
+          <h1 class="download-title">FunSpec</h1>
+          <p class="download-subtitle">Официальный сайт загрузки файлов мода и расширения</p>
+        </div>
+        
+        <!-- TWO CARDS GRID -->
+        <div class="cards-grid">
+          
+          <!-- CARD 1: MOD -->
+          <div class="download-card">
+            <div class="card-icon-wrapper">
+              <!-- Game Controller / Mod Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 class="card-title">Мод FunSpec</h3>
+            <p class="card-description">Клиентский игровой мод. Устанавливается непосредственно в вашу игру для полноценного взаимодействия с серверами.</p>
+            <a href="#" id="btn-download-mod" class="btn-download-large disabled">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Скачать Мод (.jar)</span>
+            </a>
+            <div class="meta-container">
+              <div id="mod-update-date" class="file-meta">Поиск файла...</div>
+            </div>
+          </div>
+          
+          <!-- CARD 2: EXTENSION -->
+          <div class="download-card">
+            <div class="card-icon-wrapper">
+              <!-- Browser / Puzzle Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+              </svg>
+            </div>
+            <h3 class="card-title">Расширение FunSpec</h3>
+            <p class="card-description">Браузерное расширение. Добавляет дополнительный функционал и обеспечивает быстрый доступ в веб-интерфейсе.</p>
+            <a href="#" id="btn-download-ext" class="btn-download-large disabled">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Скачать Расширение</span>
+            </a>
+            <div class="meta-container">
+              <div id="ext-update-date" class="file-meta">Поиск файла...</div>
+            </div>
+          </div>
+          
+        </div>
+        
+        <!-- DYNAMIC LINK TO CHANGELOG VIEW & STATS -->
+        <div style="text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center; margin-top: 10px;">
+          
+          <a href="https://vk.com/@funspec-pamyatka-dlya-raboty-ustanovka-i-ispolzovanie-funspec" target="_blank" class="link-changelogs-trigger" style="background-color: rgba(167, 29, 49, 0.1); border-color: rgba(167, 29, 49, 0.3); color: #fff;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <span>📖 Читать Памятку и Инструкцию</span>
+          </a>
+
+          <a href="https://vk.com/@funspec-funkcional-i-vozmozhnosti-funspec" target="_blank" class="link-changelogs-trigger" style="background-color: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1);">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>⚡ Функционал и возможности мода</span>
+          </a>
+
+          <a href="/stats.html" class="link-changelogs-trigger" style="background-color: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); margin-top: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span>Посмотреть онлайн команды</span>
+          </a>
+
+          <a href="#" id="btn-show-changelogs" class="link-changelogs-trigger">
+            <span>Посмотреть историю обновлений</span>
+            <!-- Arrow Right Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </a>
+        </div>
+      </section>
+      
+      <!-- VIEW 2: CHANGELOG VIEW (Hidden by default) -->
+      <section id="view-changelogs" class="view-screen" style="display: none;">
+        <!-- BACK TRIGGER -->
+        <div class="changelog-back-row">
+          <a href="#" id="btn-back-to-download" class="link-back-trigger">
+            <!-- Arrow Left Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Назад к скачиванию</span>
+          </a>
+        </div>
+        
+        <!-- HEADER -->
+        <div class="changelog-header-row">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h2>История обновлений</h2>
+        </div>
+        
+        <!-- DYNAMIC LIST CONTAINER -->
+        <div id="changelog-section" class="changelog-list">
+          <!-- Dynamically rendered updates list cards -->
+        </div>
+      </section>
+      
+      <!-- ERROR/EMPTY STATE CONTAINER -->
+      <div id="download-error" class="error-state" style="display: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h3 id="error-title">Не удалось получить обновления</h3>
+        <p id="error-message">Пожалуйста, попробуйте обновить страницу позже.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Format bytes to human readable format
+    function formatBytes(bytes, decimals = 2) {
+      if (!bytes || bytes === 0) return '0 Байт';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Байт', 'КБ', 'МБ', 'ГБ'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // Format date beautifully in Russian
+    function formatDate(dateStr) {
+      try {
+        const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return new Date(dateStr).toLocaleDateString('ru-RU', options);
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Elements
+      const loader = document.getElementById('download-loader');
+      const viewDownload = document.getElementById('view-download');
+      const viewChangelogs = document.getElementById('view-changelogs');
+      const errorState = document.getElementById('download-error');
+      
+      const btnShowChangelogs = document.getElementById('btn-show-changelogs');
+      const btnBackToDownload = document.getElementById('btn-back-to-download');
+      
+      const btnDownloadMod = document.getElementById('btn-download-mod');
+      const btnDownloadExt = document.getElementById('btn-download-ext');
+      
+      const modUpdateDate = document.getElementById('mod-update-date');
+      const extUpdateDate = document.getElementById('ext-update-date');
+      const changelogSection = document.getElementById('changelog-section');
+
+      // SPA Navigation function
+      function navigateTo(viewToShow, viewToHide) {
+        viewToHide.classList.remove('active');
+        setTimeout(() => {
+          viewToHide.style.display = 'none';
+          
+          viewToShow.style.display = 'block';
+          // Force layout reflow
+          viewToShow.offsetHeight;
+          viewToShow.classList.add('active');
+        }, 300);
+      }
+
+      btnShowChangelogs.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo(viewChangelogs, viewDownload);
+      });
+
+      btnBackToDownload.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo(viewDownload, viewChangelogs);
+      });
+
+      // Fetch /api/updates
+      fetch('/api/updates')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Сбой сети при получении истории обновлений');
+          }
+          return response.json();
+        })
+        .then(res => {
+          if (!Array.isArray(res) || res.length === 0) {
+            showError('Обновлений не найдено', 'На данный момент на сервере нет доступных обновлений.');
+            return;
+          }
+
+          const updates = res;
+          
+          // 1. Find latest Mod file (.jar / .jar1)
+          let latestModFile = null;
+          let latestModUpdateDate = null;
+          for (const update of updates) {
+            if (!update.files) continue;
+            const modFile = update.files.find(f => 
+              f.originalName && (f.originalName.toLowerCase().endsWith('.jar') || 
+              f.originalName.toLowerCase().endsWith('.jar1'))
+            );
+            if (modFile) {
+              latestModFile = modFile;
+              latestModUpdateDate = update.createdAt;
+              break;
+            }
+          }
+
+          // 2. Find latest Extension file (.zip / .crx)
+          let latestExtFile = null;
+          let latestExtUpdateDate = null;
+          for (const update of updates) {
+            if (!update.files) continue;
+            const extFile = update.files.find(f => 
+              f.originalName && (f.originalName.toLowerCase().endsWith('.zip') || 
+              f.originalName.toLowerCase().endsWith('.crx'))
+            );
+            if (extFile) {
+              latestExtFile = extFile;
+              latestExtUpdateDate = update.createdAt;
+              break;
+            }
+          }
+
+          // Render Mod Card Data
+          if (latestModFile) {
+            btnDownloadMod.href = `/api/updates/download/${latestModFile.id}`;
+            btnDownloadMod.classList.remove('disabled');
+            modUpdateDate.innerHTML = `
+              <span>Обновлено: <strong>${new Date(latestModUpdateDate).toLocaleDateString('ru-RU')}</strong></span>
+            `;
+          } else {
+            modUpdateDate.textContent = 'Файлы .jar/.jar1 не найдены';
+          }
+
+          // Render Extension Card Data
+          if (latestExtFile) {
+            btnDownloadExt.href = `/api/updates/download/${latestExtFile.id}`;
+            btnDownloadExt.classList.remove('disabled');
+            extUpdateDate.innerHTML = `
+              <span>Обновлено: <strong>${new Date(latestExtUpdateDate).toLocaleDateString('ru-RU')}</strong></span>
+            `;
+            
+            // Adjust file tag
+            const ext = latestExtFile.originalName.toLowerCase().endsWith('.crx') ? '.crx' : '.zip';
+            btnDownloadExt.querySelector('span').textContent = `Скачать Расширение (${ext})`;
+          } else {
+            extUpdateDate.textContent = 'Файлы .zip/.crx не найдены';
+          }
+
+          // 3. Render changelogs list
+          changelogSection.innerHTML = '';
+          updates.forEach((update, idx) => {
+            const item = document.createElement('div');
+            item.className = 'changelog-item';
+            
+            // Generate list of downloadable files using /api/updates/download/{id}
+            const filesHtml = update.files && update.files.length > 0 ? `
+              <div class="changelog-files">
+                <div class="changelog-files-title">Прикрепленные файлы:</div>
+                ${update.files.map(f => `
+                  <a href="/api/updates/download/${f.id}" class="changelog-file-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>${f.originalName}</span>
+                  </a>
+                `).join('')}
+              </div>
+            ` : '';
+
+            item.innerHTML = `
+              <div class="changelog-item-header">
+                <div class="changelog-version">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="2.5" style="width: 18px; height: 18px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4" />
+                  </svg>
+                  <span>Обновление #${update.id}</span>
+                </div>
+                <div class="changelog-date">${formatDate(update.createdAt)}</div>
+              </div>
+              <div class="changelog-body">${escapeHtml(update.description)}</div>
+              ${filesHtml}
+            `;
+            changelogSection.appendChild(item);
+          });
+
+          // Smoothly reveal main screen
+          loader.style.display = 'none';
+          viewDownload.style.display = 'block';
+          // Trigger layout reflow
+          viewDownload.offsetHeight;
+          viewDownload.classList.add('active');
+        })
+        .catch(err => {
+          console.error(err);
+          showError('Ошибка загрузки данных', err.message || 'Пожалуйста, попробуйте обновить страницу позже.');
+        });
+
+      function showError(title, msg) {
+        loader.style.display = 'none';
+        viewDownload.style.display = 'none';
+        viewChangelogs.style.display = 'none';
+        
+        document.getElementById('error-title').textContent = title;
+        document.getElementById('error-message').textContent = msg;
+        errorState.style.display = 'block';
+      }
+
+      function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+      }
+    });
+  </script>
+</body>
+</html>
