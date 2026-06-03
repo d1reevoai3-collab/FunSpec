@@ -17,6 +17,7 @@ const updatesRoutes = require('./routes/updates');
 const { requireAuth, requireVkAuth } = require('./middleware/auth');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // --- Настройки из .env ---
 const PORT = process.env.PORT || 3000;
