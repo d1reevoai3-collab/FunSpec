@@ -51,42 +51,68 @@ router.get('/status', (req, res) => {
 // ==========================================
 
 const VK_APP_ID = process.env.VK_APP_ID || '54622572';
-const VK_REDIRECT_URI = process.env.VK_REDIRECT_URI || 'https://funspec-production.up.railway.app/vk-callback.html';
+const VK_REDIRECT_URI = process.env.VK_REDIRECT_URI || 'https://funspec-production.up.railway.app/api/auth/vk/callback';
+const crypto = require('crypto');
 
 router.get('/vk', (req, res) => {
   if (!VK_APP_ID || VK_APP_ID === 'PLACEHOLDER_ID') {
     return res.status(500).send('VK_APP_ID is not configured in .env');
   }
-  // Используем Implicit Flow (response_type=token), чтобы не требовался секретный ключ!
-  const authUrl = `https://oauth.vk.com/authorize?client_id=${VK_APP_ID}&display=page&redirect_uri=${VK_REDIRECT_URI}&response_type=token&v=5.199`;
+  
+  // Генерируем PKCE ключи
+  const codeVerifier = crypto.randomBytes(32).toString('base64url');
+  const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+  
+  // Сохраняем verifier во временную куку
+  res.cookie('vk_code_verifier', codeVerifier, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 5 * 60 * 1000 // 5 минут
+  });
+
+  const authUrl = `https://oauth.vk.com/authorize?client_id=${VK_APP_ID}&display=page&redirect_uri=${VK_REDIRECT_URI}&response_type=code&code_challenge=${codeChallenge}&code_challenge_method=s256&v=5.199`;
   res.redirect(authUrl);
 });
 
-// VK SDK требует валидный redirectUrl, даже если обработка идет на клиенте
-router.get('/vk/callback', (req, res) => {
-  res.send('<html><body><script>window.close();</script>Авторизация...</body></html>');
-});
-
-router.post('/vk/implicit', async (req, res) => {
-  const { access_token, user_id } = req.body;
+router.get('/vk/callback', async (req, res) => {
+  const code = req.query.code;
+  const deviceId = req.query.device_id || '';
+  const codeVerifier = req.cookies.vk_code_verifier;
   
-  if (!access_token || !user_id) {
-    return res.status(400).json({ success: false, error: 'Missing token or user_id' });
+  if (!code) {
+    return res.redirect('/vk-login.html?error=no_code');
+  }
+
+  if (!codeVerifier) {
+    console.error('Missing code_verifier in cookies');
+    return res.redirect('/vk-login.html?error=server_error');
   }
 
   try {
-    // 1. Проверяем валидность токена, запросив профиль пользователя
+    // 1. Обмениваем код на токен через PKCE (БЕЗ client_secret!)
+    const tokenUrl = `https://oauth.vk.com/access_token?client_id=${VK_APP_ID}&redirect_uri=${VK_REDIRECT_URI}&code=${code}&code_verifier=${codeVerifier}${deviceId ? '&device_id=' + deviceId : ''}`;
+    const tokenRes = await axios.get(tokenUrl);
+
+    if (tokenRes.data.error) {
+      console.error('VK Auth Error:', tokenRes.data.error_description);
+      return res.redirect('/vk-login.html?error=vk_error');
+    }
+
+    const { access_token, user_id } = tokenRes.data;
+
+    // 2. Получаем профиль пользователя. Токен получен на сервере, поэтому ошибки IP не будет!
     const apiRes = await axios.get(`https://api.vk.com/method/users.get?user_ids=${user_id}&fields=photo_100&access_token=${access_token}&v=5.199`);
     
     if (apiRes.data.error) {
-      console.error('VK Implicit Auth Error:', apiRes.data.error.error_msg);
-      return res.status(401).json({ success: false, error: 'Invalid token' });
+      console.error('VK Profile Error:', apiRes.data.error.error_msg);
+      return res.redirect('/vk-login.html?error=vk_error');
     }
 
     const user = apiRes.data.response[0];
     const fullName = `${user.first_name} ${user.last_name}`;
 
-    // 2. Устанавливаем безопасные cookies
+    // 3. Устанавливаем безопасные cookies
     const vkToken = getVkAuthToken(user_id);
 
     const cookieOpts = {
@@ -96,10 +122,10 @@ router.post('/vk/implicit', async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 дней
     };
 
+    res.clearCookie('vk_code_verifier');
     res.cookie('vk_session', vkToken, cookieOpts);
     res.cookie('vk_id', user_id.toString(), cookieOpts);
 
-    // Имя доступно из JS для отображения, но не содержит секретов
     res.cookie('vk_name', encodeURIComponent(fullName), {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
@@ -107,11 +133,11 @@ router.post('/vk/implicit', async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
 
-    return res.json({ success: true, user: fullName });
+    res.redirect('/download.html');
 
   } catch (error) {
-    console.error('VK Implicit Auth Callback Error:', error.message);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
+    console.error('VK PKCE Auth Callback Error:', error.message);
+    res.redirect('/vk-login.html?error=server_error');
   }
 });
 
