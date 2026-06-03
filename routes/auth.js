@@ -62,6 +62,11 @@ router.get('/vk', (req, res) => {
   res.redirect(authUrl);
 });
 
+// VK SDK требует валидный redirectUrl, даже если обработка идет на клиенте
+router.get('/vk/callback', (req, res) => {
+  res.send('<html><body><script>window.close();</script>Авторизация...</body></html>');
+});
+
 router.post('/vk/implicit', async (req, res) => {
   const { access_token, user_id } = req.body;
   
