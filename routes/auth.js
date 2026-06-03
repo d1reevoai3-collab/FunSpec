@@ -50,42 +50,38 @@ router.get('/status', (req, res) => {
 // VK OAuth Routes
 // ==========================================
 
-const VK_APP_ID = process.env.VK_APP_ID;
-const VK_APP_SECRET = process.env.VK_APP_SECRET;
-const VK_REDIRECT_URI = process.env.VK_REDIRECT_URI || 'http://localhost:3000/api/auth/vk/callback';
+const VK_APP_ID = process.env.VK_APP_ID || '54622572';
+const VK_REDIRECT_URI = process.env.VK_REDIRECT_URI || 'https://funspec-production.up.railway.app/vk-callback.html';
 
 router.get('/vk', (req, res) => {
   if (!VK_APP_ID || VK_APP_ID === 'PLACEHOLDER_ID') {
     return res.status(500).send('VK_APP_ID is not configured in .env');
   }
-  const authUrl = `https://oauth.vk.com/authorize?client_id=${VK_APP_ID}&display=page&redirect_uri=${VK_REDIRECT_URI}&response_type=code&v=5.199`;
+  // Используем Implicit Flow (response_type=token), чтобы не требовался секретный ключ!
+  const authUrl = `https://oauth.vk.com/authorize?client_id=${VK_APP_ID}&display=page&redirect_uri=${VK_REDIRECT_URI}&response_type=token&v=5.199`;
   res.redirect(authUrl);
 });
 
-router.get('/vk/callback', async (req, res) => {
-  const code = req.query.code;
-  if (!code) {
-    return res.redirect('/vk-login.html?error=no_code');
+router.post('/vk/implicit', async (req, res) => {
+  const { access_token, user_id } = req.body;
+  
+  if (!access_token || !user_id) {
+    return res.status(400).json({ success: false, error: 'Missing token or user_id' });
   }
 
   try {
-    // 1. Получаем Access Token от VK
-    const tokenUrl = `https://oauth.vk.com/access_token?client_id=${VK_APP_ID}&client_secret=${VK_APP_SECRET}&redirect_uri=${VK_REDIRECT_URI}&code=${code}`;
-    const tokenRes = await axios.get(tokenUrl);
-
-    if (tokenRes.data.error) {
-      console.error('VK Auth Error:', tokenRes.data.error_description);
-      return res.redirect('/vk-login.html?error=vk_error');
+    // 1. Проверяем валидность токена, запросив профиль пользователя
+    const apiRes = await axios.get(`https://api.vk.com/method/users.get?user_ids=${user_id}&fields=photo_100&access_token=${access_token}&v=5.199`);
+    
+    if (apiRes.data.error) {
+      console.error('VK Implicit Auth Error:', apiRes.data.error.error_msg);
+      return res.status(401).json({ success: false, error: 'Invalid token' });
     }
 
-    const { access_token, user_id } = tokenRes.data;
-
-    // 2. Получаем профиль пользователя
-    const apiRes = await axios.get(`https://api.vk.com/method/users.get?user_ids=${user_id}&fields=photo_100&access_token=${access_token}&v=5.199`);
     const user = apiRes.data.response[0];
     const fullName = `${user.first_name} ${user.last_name}`;
 
-    // 3. Устанавливаем безопасные cookies
+    // 2. Устанавливаем безопасные cookies
     const vkToken = getVkAuthToken(user_id);
 
     const cookieOpts = {
@@ -106,12 +102,11 @@ router.get('/vk/callback', async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
 
-    // 4. Редирект на страницу загрузок
-    res.redirect('/download.html');
+    return res.json({ success: true, user: fullName });
 
   } catch (error) {
-    console.error('VK Auth Callback Error:', error.message);
-    res.redirect('/vk-login.html?error=server_error');
+    console.error('VK Implicit Auth Callback Error:', error.message);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 

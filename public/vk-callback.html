@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Авторизация ВКонтакте...</title>
+  <style>
+    body {
+      background: #121216;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <h2>Завершение авторизации...</h2>
+  <script>
+    // VK возвращает данные в хеше URL: #access_token=...&user_id=...
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token');
+    const userId = params.get('user_id');
+
+    if (accessToken && userId) {
+      // Отправляем токен на бекенд для проверки и создания сессии
+      fetch('/api/auth/vk/implicit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: accessToken, user_id: userId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = '/download.html';
+        } else {
+          window.location.href = '/vk-login.html?error=server_error';
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        window.location.href = '/vk-login.html?error=server_error';
+      });
+    } else {
+      // Если токена нет, значит пользователь отменил или произошла ошибка
+      const queryParams = new URLSearchParams(window.location.search);
+      const error = queryParams.get('error');
+      if (error) {
+         window.location.href = '/vk-login.html?error=vk_error';
+      } else {
+         window.location.href = '/vk-login.html?error=no_code';
+      }
+    }
+  </script>
+</body>
+</html>
