@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "VK MC Bridge",
+  "version": "9.1",
+  "description": "Мост между VK заявками и Minecraft модом VK-Spec",
+  "permissions": ["storage", "tabs", "scripting"],
+  "host_permissions": [
+    "https://vk.com/*",
+    "https://api.vk.com/*",
+    "https://oauth.vk.com/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "ws://127.0.0.1/*",
+    "ws://localhost/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "VK MC Bridge"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://vk.com/*",
+        "*://*.vk.com/*"
+      ],
+      "js": ["content.js", "keepalive.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["inject.js"],
+      "matches": ["*://vk.com/*", "*://*.vk.com/*"]
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>VK MC Bridge</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            width: 340px; min-height: 180px;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: #0c111a; color: #e2e8f0; padding: 16px;
+        }
+        .header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .logo { width: 28px; height: 28px; background: linear-gradient(135deg, #22c55e, #16a34a); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff; }
+        .header h1 { font-size: 15px; font-weight: 700; color: #f1f5f9; }
+        .header .ver { font-size: 10px; color: #475569; margin-left: auto; }
+        .card { background: #151c2a; border: 1px solid #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+        .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #475569; margin-bottom: 8px; font-weight: 600; }
+        .row { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .avatar.ok { background: #22c55e22; color: #22c55e; }
+        .avatar.no { background: #ef444422; color: #ef4444; }
+        .name { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+        .sub { font-size: 11px; color: #475569; }
+        .btn { display: block; width: 100%; padding: 9px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: center; margin-top: 10px; }
+        .btn:active { transform: scale(0.98); }
+        .btn-green { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+        .btn-green:hover { box-shadow: 0 3px 12px #22c55e44; }
+        .btn-red { background: #1e293b; color: #ef4444; border: 1px solid #ef444422; }
+        .btn-outline { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+        .btn-outline:hover { background: #334155; color: #e2e8f0; }
+        .chat-list { max-height: 200px; overflow-y: auto; margin-top: 8px; }
+        .chat-list::-webkit-scrollbar { width: 3px; }
+        .chat-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .ci { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; border-radius: 7px; transition: background 0.1s; }
+        .ci:hover { background: #1e293b; }
+        .ci.active { background: #22c55e12; outline: 1px solid #22c55e33; }
+        .ci-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+        .ci-icon.g { background: #3b82f618; color: #60a5fa; }
+        .ci-icon.c { background: #a855f718; color: #c084fc; }
+        .ci-icon.u { background: #f59e0b18; color: #fbbf24; }
+        .ci-t { font-size: 12px; font-weight: 500; color: #e2e8f0; }
+        .ci-p { font-size: 10px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+        .ci-u { background: #22c55e; color: #fff; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 8px; margin-left: auto; }
+        .sel { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #22c55e0d; border: 1px solid #22c55e22; border-radius: 8px; }
+        .sel .n { font-size: 12px; color: #22c55e; font-weight: 600; flex: 1; }
+        .sel .ch { font-size: 10px; color: #475569; cursor: pointer; text-decoration: underline; }
+        .sel .ch:hover { color: #94a3b8; }
+        .sr { display: flex; align-items: center; gap: 7px; padding: 4px 0; font-size: 12px; }
+        .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .dot.on { background: #22c55e; box-shadow: 0 0 5px #22c55e88; }
+        .dot.off { background: #ef4444; box-shadow: 0 0 5px #ef444488; }
+        .dot.wait { background: #f59e0b; box-shadow: 0 0 5px #f59e0b88; }
+        .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #334155; border-top-color: #22c55e; border-radius: 50%; animation: sp 0.7s linear infinite; margin-right: 6px; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+        .ld { display: flex; align-items: center; justify-content: center; padding: 14px; color: #475569; font-size: 12px; }
+        .err { padding: 10px; color: #ef4444; font-size: 12px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">⚡</div>
+        <h1>VK MC Bridge</h1>
+        <span class="ver">v9.0</span>
+    </div>
+
+    <div class="card">
+        <div class="label">Аккаунт VK</div>
+        <div id="vk-off">
+            <div class="row">
+                <div class="avatar no">✗</div>
+                <div><div class="name">Не подключен</div><div class="sub">Нажмите Подключить для авторизации</div></div>
+            </div>
+            <button class="btn btn-green" id="btn-connect">⚡ Подключить</button>
+        </div>
+        <div id="vk-on" class="hidden">
+            <div class="row">
+                <div class="avatar ok">✓</div>
+                <div><div class="name" id="uname">—</div><div class="sub">Подключено</div></div>
+            </div>
+            <button class="btn btn-red" id="btn-disconnect">Отключить</button>
+        </div>
+    </div>
+
+    <div class="card hidden" id="chat-sec">
+        <div class="label">Чат с заявками</div>
+        <div id="chat-sel" class="hidden">
+            <div class="sel"><span>💬</span><span class="n" id="sel-name">—</span><span class="ch" id="btn-ch">изменить</span></div>
+        </div>
+        <div id="chat-pick" class="hidden">
+            <button class="btn btn-outline" id="btn-load">📋 Загрузить чаты</button>
+            <div id="chat-ld" class="ld hidden"><span class="spin"></span>Загрузка...</div>
+            <div class="chat-list" id="chat-list"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="label">Статус</div>
+        <div class="sr"><div class="dot off" id="d-vk"></div><span>VK</span><span style="margin-left:auto;font-size:10px;color:#475569" id="l-vk">—</span></div>
+        <div class="sr"><div class="dot off" id="d-mc"></div><span>Minecraft</span><span style="margin-left:auto;font-size:10px;color:#475569" id="l-mc">—</span></div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

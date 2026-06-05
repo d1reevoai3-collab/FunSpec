@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "funspec",
+  "name": "FunSpec",
+  "version": "${version}",
+  "description": "FunSpec - mod for moderators. Receives spec requests and notifies in-game.",
+  "authors": [
+    "Antigravity"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "ru.antigravity.vkspec.FunSpecMod"
+    ]
+  },
+  "mixins": [
+    "vkspec.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.4",
+    "fabric-api": "*"
+  }
+}
